@@ -32,5 +32,31 @@ def create_table(
     return {"status": "OK"}
 
 
+@app.put("/tables/{table_id}")
+def update_table(table_id: int,
+                 title: str,
+                 description: str):
+    global tables
+    for table in tables:
+        if table["id"] == table_id:
+            table["title"] = title
+            table["description"] = description
+    return {"status": "OK"}
+
+
+@app.patch("/tables/{table_id}")
+def update_table(table_id: int,
+                 title: str | None = Body(default=None, embed=True, description="Table title"),
+                 description: str | None = Body(default=None, embed=True, description="Table description")):
+    for table in tables:
+        if table["id"] == table_id:
+            if title:
+                table["title"] = title
+            if description:
+                table["description"] = description
+    return {"status": "OK"}
+
+
+
 if __name__ == "__main__":
     uvicorn.run("main:app", reload=True)
