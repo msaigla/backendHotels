@@ -9,6 +9,7 @@
 [Ll]ocal
 [Ss]cripts
 pyvenv.cfg
+venv
 .venv
 pip-selfcheck.json
 
@@ -22,3 +23,5 @@ out
 gen
 
 __pycache__
+
+.env
