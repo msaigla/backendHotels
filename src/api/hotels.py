@@ -1,11 +1,8 @@
 from fastapi import APIRouter, Query, Body
 
-from sqlalchemy import insert, select, literal, func
-
 from repos.hotels import HotelsRepository
 from src.api.dependencies import PaginationDep
 from src.database import async_session_maker
-from src.models.hotels import HotelsOrm
 from src.schemas.hotels import Hotel, HotelPATCH
 
 router = APIRouter(prefix="/hotels", tags=["Столы"])
@@ -27,12 +24,10 @@ async def get_hotels(
         )
 
 
-@router.delete("/{hotel_id}")
-async def delete_hotel(hotel_id: int):
+@router.get("/{hotel_id}")
+async def get_hotel(hotel_id: int):
     async with async_session_maker() as session:
-        await HotelsRepository(session).delete(id=hotel_id)
-        await session.commit()
-    return {"status": "OK"}
+        return await HotelsRepository(session).get_one_or_none(id=hotel_id)
 
 
 @router.post("")
@@ -68,12 +63,16 @@ async def edit_hotel(hotel_id: int, hotel_data: Hotel):
 
 
 @router.patch("/{hotel_id}")
-def edit_hotel(hotel_id: int, hotel_data: HotelPATCH):
-    global hotels
-    for hotel in hotels:
-        if hotel["id"] == hotel_id:
-            if hotel_data.title:
-                hotel["title"] = hotel_data.title
-            if hotel_data.description:
-                hotel["description"] = hotel_data.description
+async def edit_hotel(hotel_id: int, hotel_data: HotelPATCH):
+    async with async_session_maker() as session:
+        await HotelsRepository(session).edit(data=hotel_data, exclude_unset=True, id=hotel_id)
+        await session.commit()
+    return {"status": "OK"}
+
+
+@router.delete("/{hotel_id}")
+async def delete_hotel(hotel_id: int):
+    async with async_session_maker() as session:
+        await HotelsRepository(session).delete(id=hotel_id)
+        await session.commit()
     return {"status": "OK"}
