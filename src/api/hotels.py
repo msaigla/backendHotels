@@ -5,7 +5,7 @@ from src.api.dependencies import PaginationDep
 from src.database import async_session_maker
 from src.schemas.hotels import HotelPATCH, HotelAdd
 
-router = APIRouter(prefix="/hotels", tags=["Столы"])
+router = APIRouter(prefix="/hotels", tags=["Отели"])
 
 
 @router.get("")
