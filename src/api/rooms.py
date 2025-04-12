@@ -1,33 +1,39 @@
 from fastapi import APIRouter, Query, Body
 
-from src.repos.rooms import RoomsRepository
-from src.api.dependencies import PaginationDep
-from src.database import async_session_maker
-from src.schemas.rooms import RoomPATCH, RoomAdd
+from src.api.dependencies import PaginationDep, DBDep
+from src.schemas.rooms import RoomAdd, RoomAddRequest, RoomPatch, RoomPatchRequest
 
 router = APIRouter(prefix="/rooms", tags=["Комнаты"])
 
 
-@router.get("")
+@router.get("/{hotel_id}/rooms")
 async def get_rooms(
         pagination: PaginationDep,
+        db: DBDep,
+        hotel_id: int,
         title: str | None = Query(None, description="Название отеля"),
         description: str | None = Query(None, description="Описание комнаты"),
-        hotel_id: int | None = Query(None, description="Айди отеля"),
 ):
     per_page = pagination.per_page or 5
-    async with async_session_maker() as session:
-        return await RoomsRepository(session).get_all(
-            title=title,
-            description=description,
-            hotel_id=hotel_id,
-            limit=per_page,
-            offset=(pagination.page - 1) * per_page,
-        )
+    return await db.rooms.get_all(
+        title=title,
+        description=description,
+        hotel_id=hotel_id,
+        limit=per_page,
+        offset=(pagination.page - 1) * per_page,
+    )
 
 
-@router.post("")
-async def create_room(room_data: RoomAdd = Body(openapi_examples={
+@router.get("/{hotel_id}/rooms/{room_id}")
+async def get_room(db: DBDep, hotel_id: int, room_id: int):
+    return await db.rooms.get_one_or_none(id=room_id, hotel_id=hotel_id)
+
+
+@router.post("/{hotel_id}/rooms")
+async def create_room(
+        db: DBDep,
+        hotel_id: int,
+        room_data: RoomAddRequest = Body(openapi_examples={
             "1": {
                 "summary": "Комната в сочи",
                 "value": {
@@ -50,37 +56,28 @@ async def create_room(room_data: RoomAdd = Body(openapi_examples={
             },
         }),
 ):
-    async with async_session_maker() as session:
-        room = await RoomsRepository(session).add(room_data)
-        await session.commit()
-    return {"status": "OK", "data": room}
+    _room_data = RoomAdd(hotel_id=hotel_id, **room_data.model_dump())
+    return {"status": "OK", "data": await db.rooms.add(_room_data)}
 
 
-@router.get("/{room_id}")
-async def get_room(room_id: int):
-    async with async_session_maker() as session:
-        return await RoomsRepository(session).get_one_or_none(id=room_id)
-
-
-@router.put("/{room_id}")
-async def edit_room(room_id: int, room_data: RoomAdd):
-    async with async_session_maker() as session:
-        await RoomsRepository(session).edit(data=room_data, id=room_id)
-        await session.commit()
+@router.put("/{hotel_id}/rooms/{room_id}")
+async def edit_room(db: DBDep, hotel_id: int, room_id: int, room_data: RoomAddRequest):
+    _room_data = RoomAdd(hotel_id=hotel_id, **room_data.model_dump())
+    await db.rooms.edit(
+        data=_room_data,
+        id=room_id
+    )
     return {"status": "OK"}
 
 
-@router.patch("/{room_id}")
-async def edit_room(room_id: int, room_data: RoomPATCH):
-    async with async_session_maker() as session:
-        await RoomsRepository(session).edit(data=room_data, exclude_unset=True, id=room_id)
-        await session.commit()
+@router.patch("/{hotel_id}/rooms/{room_id}")
+async def edit_room(db: DBDep, hotel_id, room_id: int, room_data: RoomPatchRequest):
+    _room_data = RoomPatch(hotel_id=hotel_id, **room_data.model_dump(exclude_unset=True))
+    await db.rooms.edit(data=_room_data, exclude_unset=True, id=room_id, hotel_id=hotel_id)
     return {"status": "OK"}
 
 
-@router.delete("/{room_id}")
-async def delete_room(room_id: int):
-    async with async_session_maker() as session:
-        await RoomsRepository(session).delete(id=room_id)
-        await session.commit()
+@router.delete("/{hotel_id}/rooms/{room_id}")
+async def delete_room(db: DBDep, hotel_id: int, room_id: int):
+    await db.rooms.delete(id=room_id, hotel_id=hotel_id)
     return {"status": "OK"}
