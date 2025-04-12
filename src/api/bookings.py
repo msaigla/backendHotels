@@ -7,7 +7,7 @@ router = APIRouter(prefix="/bookings", tags=["Бронирование"])
 
 
 @router.post("")
-async def create_hotel(
+async def create_booking(
         db: DBDep,
         user_id: UserIdDep,
         data: BookingAddRequest
@@ -20,3 +20,23 @@ async def create_hotel(
     booking = await db.bookings.add(_data)
     await db.commit()
     return {"status": "OK", "data": booking}
+
+
+@router.get("")
+async def get_bookings(
+        db: DBDep
+):
+    return await db.bookings.get_all()
+
+
+@router.get("/me")
+async def get_bookings_me(
+        db: DBDep,
+        user_id: UserIdDep,
+):
+    return await db.bookings.get_me(user_id=user_id)
+
+
+
+
+
