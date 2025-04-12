@@ -1,8 +1,7 @@
-from fastapi import APIRouter, Body, HTTPException
+from fastapi import APIRouter, HTTPException
 
 from src.api.dependencies import DBDep, UserIdDep
-from src.models.bookings import BookingsOrm
-from src.schemas.bookings import BookingAdd, BookingFull
+from src.schemas.bookings import BookingAdd, BookingAddRequest
 
 router = APIRouter(prefix="/bookings", tags=["Бронирование"])
 
@@ -11,14 +10,13 @@ router = APIRouter(prefix="/bookings", tags=["Бронирование"])
 async def create_hotel(
         db: DBDep,
         user_id: UserIdDep,
-        data: BookingAdd
+        data: BookingAddRequest
 ):
-    user = await db.users.get_one_or_none(id=user_id)
     room = await db.rooms.get_one_or_none(id=data.room_id)
     if not room:
         raise HTTPException(status_code=401, detail="Такой комнаты нету")
-    price = room.price * (data.date_to - data.date_from).days
-    _data = BookingFull(price=price, user_id=user.id, **data.model_dump())
+    room_price: int = room.price
+    _data = BookingAdd(price=room_price, user_id=user_id, **data.dict())
     booking = await db.bookings.add(_data)
     await db.commit()
     return {"status": "OK", "data": booking}

@@ -3,20 +3,18 @@ from datetime import date
 from pydantic import BaseModel, ConfigDict
 
 
-class BookingAdd(BaseModel):
+class BookingAddRequest(BaseModel):
     date_from: date
     date_to: date
     room_id: int
 
 
-class BookingFull(BookingAdd):
+class BookingAdd(BookingAddRequest):
     price: int
     user_id: int
 
 
-class Booking(BookingFull):
-    price: int
-    user_id: int
+class Booking(BookingAdd):
     id: int
 
     model_config = ConfigDict(from_attributes=True)
