@@ -5,6 +5,13 @@ from sqlalchemy import select, func
 from src.models.bookings import BookingsOrm
 from src.models.rooms import RoomsOrm
 
+from datetime import date
+
+from sqlalchemy import select, func
+
+from src.models.bookings import BookingsOrm
+from src.models.rooms import RoomsOrm
+
 
 def rooms_ids_for_booking(
         date_from: date,
@@ -31,23 +38,25 @@ def rooms_ids_for_booking(
         .outerjoin(rooms_count, RoomsOrm.id == rooms_count.c.room_id)
         .cte(name="rooms_left_table")
     )
+
     rooms_ids_for_hotel = (
         select(RoomsOrm.id)
         .select_from(RoomsOrm)
     )
-
     if hotel_id is not None:
         rooms_ids_for_hotel = rooms_ids_for_hotel.filter_by(hotel_id=hotel_id)
 
-    rooms_ids_for_hotel = rooms_ids_for_hotel.subquery(name="rooms_ids_for_hotel")
+    rooms_ids_for_hotel = (
+        rooms_ids_for_hotel
+        .subquery(name="rooms_ids_for_hotel")
+    )
 
     rooms_ids_to_get = (
-        select(rooms_left_table)
+        select(rooms_left_table.c.room_id)
         .select_from(rooms_left_table)
         .filter(
             rooms_left_table.c.rooms_left > 0,
             rooms_left_table.c.room_id.in_(rooms_ids_for_hotel),
         )
     )
-
     return rooms_ids_to_get
