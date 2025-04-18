@@ -26,7 +26,7 @@ class Room(RoomAdd):
 
 
 class RoomWithRels(Room):
-    facilities_ids: list[Facility]
+    facilities: list[Facility]
 
 
 class RoomPatchRequest(BaseModel):
