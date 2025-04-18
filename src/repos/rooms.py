@@ -1,42 +1,17 @@
 from datetime import date
 
 from sqlalchemy import select, func
+from sqlalchemy.orm import selectinload, joinedload
 
-from src.database import engine
-from src.models.bookings import BookingsOrm
 from src.repos.base import BaseRepository
 from src.models.rooms import RoomsOrm
 from src.repos.utils import rooms_ids_for_booking
-from src.schemas.rooms import Room
+from src.schemas.rooms import Room, RoomWithRels
 
 
 class RoomsRepository(BaseRepository):
     model = RoomsOrm
     schema = Room
-
-    async def get_all(
-            self,
-            description: str,
-            title: str,
-            hotel_id: int,
-            limit: int,
-            offset: int
-    ) -> list[Room]:
-        query = select(RoomsOrm)
-        if description:
-            query = query.filter(func.lower(RoomsOrm.description).contains(description.strip().lower()))
-        if title:
-            query = query.filter(func.lower(RoomsOrm.title).contains(title.strip().lower()))
-        if hotel_id is not None:
-            query = query.filter_by(hotel_id=hotel_id)
-        query = (
-            query
-            .limit(limit)
-            .offset(offset)
-        )
-        result = await self.session.execute(query)
-
-        return [Room.model_validate(room, from_attributes=True) for room in result.scalars().all()]
 
     async def get_filtered_by_time(
             self,
@@ -61,6 +36,12 @@ class RoomsRepository(BaseRepository):
 
         rooms_ids_to_get = rooms_ids_for_booking(hotel_id=hotel_id, date_from=date_from, date_to=date_to)
 
-        print(rooms_ids_to_get.compile(bind=engine, compile_kwargs={"literal_binds": True}))
+        query = (
+            select(self.model)
+            .options(selectinload(self.model.facilities))
+            .filter(RoomsOrm.id.in_(rooms_ids_to_get))
+        )
+        result = await self.session.execute(query)
+        return [RoomWithRels.model_validate(model) for model in result.scalars().all()]
 
-        return await self.get_filtered(RoomsOrm.id.in_(rooms_ids_to_get))
+
