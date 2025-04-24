@@ -1,13 +1,8 @@
-from typing import List
-
-from pydantic import BaseModel
-from sqlalchemy import select
-
 from src.models.bookings import BookingsOrm
 from src.repos.base import BaseRepository
-from src.schemas.bookings import Booking
+from src.repos.mappers.mappers import BookingDataMapper
 
 
 class BookingsRepository(BaseRepository):
     model = BookingsOrm
-    schema = Booking
+    mapper = BookingDataMapper
