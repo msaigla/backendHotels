@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -7,6 +8,8 @@ from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
 import sys
 from pathlib import Path
+
+from src.api.dependencies import get_db
 
 sys.path.append(str(Path(__file__).parent.parent))
 
@@ -21,12 +24,12 @@ from src.api.images import router as image_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # при старте
     await redis_manager.connect()
     FastAPICache.init(RedisBackend(redis_manager.redis), prefix="fastapi-cache")
     yield
     # при выключении
     await redis_manager.close()
+
 
 app = FastAPI(docs_url=None, lifespan=lifespan)
 
@@ -47,6 +50,7 @@ async def custom_swagger_ui_html():
         swagger_js_url="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js",
         swagger_css_url="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css",
     )
+
 
 if __name__ == "__main__":
     uvicorn.run("main:app", reload=True)

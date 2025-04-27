@@ -14,9 +14,9 @@ def task_task():
     print("Поспал")
 
 
-@celery_instance.task
+# @celery_instance.task
 def resize_image(image_path: str):
-    sizes = [100, 500, 200]
+    sizes = [10000, 500, 200]
     output_folder = 'src/static/images'
 
     # Открываем изображение
