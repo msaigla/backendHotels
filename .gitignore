@@ -25,3 +25,4 @@ gen
 __pycache__
 
 .env
+celerybeat-schedule.db
