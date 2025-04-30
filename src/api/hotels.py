@@ -69,7 +69,7 @@ async def edit_hotel(db: DBDep, hotel_id: int, hotel_data: HotelAdd):
 
 
 @router.patch("/{hotel_id}")
-async def edit_hotel(db: DBDep, hotel_id: int, hotel_data: HotelPATCH):
+async def edit_hotel_patch(db: DBDep, hotel_id: int, hotel_data: HotelPATCH):
     await db.hotels.edit(data=hotel_data, exclude_unset=True, id=hotel_id)
     await db.commit()
     return {"status": "OK"}

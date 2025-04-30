@@ -2,7 +2,6 @@ from pydantic import BaseModel
 from sqlalchemy import select, insert, delete, update
 
 from src.repos.mappers.base import DataMapper
-from src.schemas.hotels import Hotel
 
 
 class BaseRepository:

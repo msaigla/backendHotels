@@ -2,7 +2,7 @@ from datetime import date
 
 from fastapi import APIRouter, Query, Body
 
-from src.api.dependencies import PaginationDep, DBDep
+from src.api.dependencies import DBDep
 from src.schemas.facilities import RoomsFacilityAdd
 from src.schemas.rooms import RoomAdd, RoomAddRequest, RoomPatch, RoomPatchRequest
 
@@ -64,7 +64,7 @@ async def edit_room(db: DBDep, hotel_id: int, room_id: int, room_data: RoomAddRe
 
 
 @router.patch("/{hotel_id}/rooms/{room_id}")
-async def edit_room(db: DBDep, hotel_id: int, room_id: int, room_data: RoomPatchRequest):
+async def edit_room_patch(db: DBDep, hotel_id: int, room_id: int, room_data: RoomPatchRequest):
     _room_data_dict = room_data.model_dump(exclude_unset=True)
     _room_data = RoomPatch(hotel_id=hotel_id, **_room_data_dict)
     await db.rooms.edit(data=_room_data, exclude_unset=True, id=room_id, hotel_id=hotel_id)

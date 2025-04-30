@@ -1,9 +1,4 @@
-from datetime import date
-
-from sqlalchemy import select, func, Select
-
-from src.models.bookings import BookingsOrm
-from src.models.rooms import RoomsOrm
+from sqlalchemy import Select, Subquery
 
 from datetime import date
 
