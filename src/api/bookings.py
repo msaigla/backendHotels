@@ -25,13 +25,16 @@ async def get_bookings_me(
 async def create_booking(
         db: DBDep,
         user_id: UserIdDep,
-        data: BookingAddRequest
+        booking_data: BookingAddRequest
 ):
-    room = await db.rooms.get_one_or_none(id=data.room_id)
-    if not room:
-        raise HTTPException(status_code=401, detail="Такой комнаты нету")
+    room = await db.rooms.get_one_or_none(id=booking_data.room_id)
+    hotel = await db.hotels.get_one_or_none(id=room.hotel_id)
     room_price: int = room.price
-    _data = BookingAdd(price=room_price, user_id=user_id, **data.dict())
-    booking = await db.bookings.add(_data)
+    _booking_data = BookingAdd(
+        user_id=user_id,
+        price=room_price,
+        **booking_data.dict(),
+    )
+    booking = await db.bookings.add_booking(_booking_data, hotel_id=hotel.id)
     await db.commit()
     return {"status": "OK", "data": booking}
