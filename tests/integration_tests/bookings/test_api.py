@@ -40,7 +40,6 @@ async def delete_all_bookings():
         await _db.commit()
 
 
-@pytest.mark.usefixtures("delete_all_bookings")
 @pytest.mark.parametrize("room_id, date_from, date_to, count", [
      (1, "2024-08-06", "2024-08-15", 1),
      (1, "2026-08-02", "2026-08-11", 2),
