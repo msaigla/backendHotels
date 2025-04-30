@@ -27,6 +27,7 @@ async def lifespan(app: FastAPI):
     # при выключении
     await redis_manager.close()
 
+
 app = FastAPI(docs_url=None, lifespan=lifespan)
 
 app.include_router(auth_router)

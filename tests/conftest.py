@@ -3,18 +3,18 @@ from unittest import mock
 
 mock.patch("fastapi_cache.decorator.cache", lambda *args, **kwargs: lambda f: f).start()
 
-import pytest # noqa
+import pytest  # noqa
 
-from httpx import AsyncClient, ASGITransport # noqa
+from httpx import AsyncClient, ASGITransport  # noqa
 
-from src.api.dependencies import get_db # noqa
-from src.config import settings # noqa
-from src.database import Base, engine_null_pool, async_session_maker_null_pool # noqa
-from src.main import app # noqa
-from src.models import * # noqa
-from src.schemas.hotels import HotelAdd # noqa
-from src.schemas.rooms import RoomAdd # noqa
-from src.utils.db_manager import DBManager # noqa
+from src.api.dependencies import get_db  # noqa
+from src.config import settings  # noqa
+from src.database import Base, engine_null_pool, async_session_maker_null_pool  # noqa
+from src.main import app  # noqa
+from src.models import *  # noqa
+from src.schemas.hotels import HotelAdd  # noqa
+from src.schemas.rooms import RoomAdd  # noqa
+from src.utils.db_manager import DBManager  # noqa
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -65,23 +65,11 @@ async def ac() -> AsyncClient:
 
 @pytest.fixture(scope="session", autouse=True)
 async def register_user(ac, setup_database):
-    await ac.post(
-        "/auth/register",
-        json={
-            "email": "test@test.ru",
-            "password": "1234"
-        }
-    )
+    await ac.post("/auth/register", json={"email": "test@test.ru", "password": "1234"})
 
 
 @pytest.fixture(scope="session")
 async def authenticated_ac(register_user, ac):
-    await ac.post(
-        "/auth/login",
-        json={
-            "email": "test@test.ru",
-            "password": "1234"
-        }
-    )
+    await ac.post("/auth/login", json={"email": "test@test.ru", "password": "1234"})
     assert ac.cookies["access_token"]
     yield ac

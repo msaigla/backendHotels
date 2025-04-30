@@ -12,12 +12,12 @@ router = APIRouter(prefix="/hotels", tags=["Отели"])
 @router.get("")
 @cache(expire=10)
 async def get_hotels(
-        pagination: PaginationDep,
-        db: DBDep,
-        title: str | None = Query(None, description="Название отеля"),
-        location: str | None = Query(None, description="Локация"),
-        date_from: date = Query(example="2025-08-01"),
-        date_to: date = Query(example="2025-08-10"),
+    pagination: PaginationDep,
+    db: DBDep,
+    title: str | None = Query(None, description="Название отеля"),
+    location: str | None = Query(None, description="Локация"),
+    date_from: date = Query(example="2025-08-01"),
+    date_to: date = Query(example="2025-08-10"),
 ):
     per_page = pagination.per_page or 5
 
@@ -38,8 +38,9 @@ async def get_hotel(db: DBDep, hotel_id: int):
 
 @router.post("")
 async def create_hotel(
-        db: DBDep,
-        hotel_data: HotelAdd = Body(openapi_examples={
+    db: DBDep,
+    hotel_data: HotelAdd = Body(
+        openapi_examples={
             "1": {
                 "summary": "Сочи",
                 "value": {
@@ -54,7 +55,8 @@ async def create_hotel(
                     "location": "ул. Шейха, 2",
                 },
             },
-        }),
+        }
+    ),
 ):
     data = await db.hotels.add(hotel_data)
     await db.commit()

@@ -25,7 +25,7 @@ def get_token(request: Request) -> str:
 
 def get_current_user_id(token: str = Depends(get_token)) -> int:
     data = AuthService().encode_token(token)
-    return data['user_id']
+    return data["user_id"]
 
 
 UserIdDep = Annotated[int, Depends(get_current_user_id)]
@@ -37,4 +37,3 @@ async def get_db():
 
 
 DBDep = Annotated[DBManager, Depends(get_db)]
-

@@ -22,9 +22,4 @@ async def add_facility(db: DBDep, data: FacilityAdd = Body()):
 
     task_task.delay()
 
-    return {
-        "status": "ok",
-        "data": data
-    }
-
-
+    return {"status": "ok", "data": data}
