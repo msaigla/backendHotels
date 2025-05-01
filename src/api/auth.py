@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Response
 from src.api.dependencies import UserIdDep, DBDep
+from src.exceptions import IncorrectPassword, UserExistsEmail
 from src.schemas.users import UserRequestAdd, UserAdd
 from src.services.auth import AuthService
 
@@ -9,14 +10,18 @@ router = APIRouter(prefix="/auth", tags=["Авторизация и аутент
 @router.post("/register")
 async def register_user(db: DBDep, data: UserRequestAdd):
     try:
+        if len(UserRequestAdd.password) == 0:
+            raise IncorrectPassword
         hashed_password = AuthService().hash_password(data.password)
         new_user_data = UserAdd(email=data.email, hashed_password=hashed_password)
 
         await db.users.add(new_user_data)
         await db.commit()
         return {"status": "OK"}
-    except:  # noqa: E722
-        raise HTTPException(status_code=400)
+    except IncorrectPassword as ex:  # noqa: E722
+        raise HTTPException(status_code=409, detail=ex.detail)
+    except UserExistsEmail as ex:  # noqa: E722
+        raise HTTPException(status_code=409, detail=ex.detail)
 
 
 @router.post("/login")

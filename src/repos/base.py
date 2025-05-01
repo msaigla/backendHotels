@@ -1,6 +1,10 @@
+from typing import Any
+
 from pydantic import BaseModel
 from sqlalchemy import select, insert, delete, update
+from sqlalchemy.exc import NoResultFound, IntegrityError
 
+from src.exceptions import ObjectNotFoundException
 from src.repos.mappers.base import DataMapper
 
 
@@ -19,7 +23,7 @@ class BaseRepository:
     async def get_all(self, *args, **kwargs):
         return await self.get_filtered()
 
-    async def get_one_or_none(self, **filter_by):
+    async def get_one_or_none(self, **filter_by) -> BaseModel | None | Any:
         query = select(self.model).filter_by(**filter_by)
         result = await self.session.execute(query)
         model = result.scalars().one_or_none()
@@ -27,9 +31,21 @@ class BaseRepository:
             return None
         return self.mapper.map_to_domain_entity(model)
 
+    async def get_one(self, **filter_by) -> BaseModel:
+        query = select(self.model).filter_by(**filter_by)
+        result = await self.session.execute(query)
+        try:
+            model = result.scalar_one()
+        except NoResultFound:
+            raise ObjectNotFoundException
+        return self.mapper.map_to_domain_entity(model)
+
     async def add(self, data: BaseModel):
         query = insert(self.model).values(**data.model_dump()).returning(self.model)
-        result = await self.session.execute(query)
+        try:
+            result = await self.session.execute(query)
+        except IntegrityError:
+            raise ObjectNotFoundException
         model = result.scalars().one()
         return self.mapper.map_to_domain_entity(model)
 
@@ -40,6 +56,7 @@ class BaseRepository:
         await self.session.execute(query)
 
     async def edit(self, data: BaseModel, exclude_unset: bool = False, **filter_by) -> None:
+        await self.get_one(**filter_by)
         query = (
             update(self.model)
             .filter_by(**filter_by)
@@ -48,5 +65,6 @@ class BaseRepository:
         await self.session.execute(query)
 
     async def delete(self, **filter_by) -> None:
+        await self.get_one(**filter_by)
         query = delete(self.model).filter_by(**filter_by)
         await self.session.execute(query)
