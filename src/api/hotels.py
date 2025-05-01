@@ -4,7 +4,7 @@ from fastapi import APIRouter, Query, Body, HTTPException
 from fastapi_cache.decorator import cache
 
 from src.api.dependencies import PaginationDep, DBDep
-from src.exceptions import ObjectNotFoundException, DateFromLaterThanDateTo
+from src.exceptions import ObjectNotFoundException, check_date_to_is_after_date_from, HotelNotFoundHTTPException
 from src.schemas.hotels import HotelPATCH, HotelAdd
 
 router = APIRouter(prefix="/hotels", tags=["Отели"])
@@ -13,25 +13,23 @@ router = APIRouter(prefix="/hotels", tags=["Отели"])
 @router.get("")
 @cache(expire=10)
 async def get_hotels(
-    pagination: PaginationDep,
-    db: DBDep,
-    title: str | None = Query(None, description="Название отеля"),
-    location: str | None = Query(None, description="Локация"),
-    date_from: date = Query(example="2025-08-01"),
-    date_to: date = Query(example="2025-08-10"),
+        pagination: PaginationDep,
+        db: DBDep,
+        title: str | None = Query(None, description="Название отеля"),
+        location: str | None = Query(None, description="Локация"),
+        date_from: date = Query(example="2025-08-01"),
+        date_to: date = Query(example="2025-08-10"),
 ):
+    check_date_to_is_after_date_from(date_from, date_to)
     per_page = pagination.per_page or 5
-    try:
-        return await db.hotels.get_filtered_by_time(
-            date_from=date_from,
-            date_to=date_to,
-            location=location,
-            title=title,
-            limit=per_page,
-            offset=(pagination.page - 1) * per_page,
-        )
-    except DateFromLaterThanDateTo as ex:
-        raise HTTPException(status_code=403, detail=ex.detail)
+    return await db.hotels.get_filtered_by_time(
+        date_from=date_from,
+        date_to=date_to,
+        location=location,
+        title=title,
+        limit=per_page,
+        offset=(pagination.page - 1) * per_page,
+    )
 
 
 @router.get("/{hotel_id}")
@@ -39,30 +37,30 @@ async def get_hotel(db: DBDep, hotel_id: int):
     try:
         return await db.hotels.get_one(id=hotel_id)
     except ObjectNotFoundException:
-        raise HTTPException(status_code=404, detail="Отеля не существует")
+        raise HotelNotFoundHTTPException
 
 
 @router.post("")
 async def create_hotel(
-    db: DBDep,
-    hotel_data: HotelAdd = Body(
-        openapi_examples={
-            "1": {
-                "summary": "Сочи",
-                "value": {
-                    "title": "Отель Сочи 5 звезд у моря",
-                    "location": "ул. Моря, 1",
+        db: DBDep,
+        hotel_data: HotelAdd = Body(
+            openapi_examples={
+                "1": {
+                    "summary": "Сочи",
+                    "value": {
+                        "title": "Отель Сочи 5 звезд у моря",
+                        "location": "ул. Моря, 1",
+                    },
                 },
-            },
-            "2": {
-                "summary": "Дубай",
-                "value": {
-                    "title": "Отель Дубай У фонтана",
-                    "location": "ул. Шейха, 2",
+                "2": {
+                    "summary": "Дубай",
+                    "value": {
+                        "title": "Отель Дубай У фонтана",
+                        "location": "ул. Шейха, 2",
+                    },
                 },
-            },
-        }
-    ),
+            }
+        ),
 ):
     data = await db.hotels.add(hotel_data)
     await db.commit()
