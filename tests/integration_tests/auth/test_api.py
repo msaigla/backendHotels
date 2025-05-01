@@ -1,35 +1,53 @@
 import pytest
 
+from httpx import AsyncClient
+
 
 @pytest.mark.parametrize(
     "email, password, status_code",
     [
-        ("test@test.ru", "123", 400),
-        ("test1", "123", 422),
-        ("test2@test.ru", "4234", 200),
-        ("test3@test.ru", "532542", 200),
-        ("test4@test.ru", "532452", 200),
-        ("test5@test.ru", "253432", 200),
+        ("test@test.com", "1234", 200),
+        ("test@test.com", "1234", 409),
+        ("test1@test.com", "1235", 200),
+        ("abcde", "1235", 422),
+        ("abcde@abc", "1235", 422),
     ],
 )
-async def test_user(email: str, password: str, status_code: int, ac):
-    response = await ac.post("/auth/register", json={"email": email, "password": password})
-    assert response.status_code == status_code
+async def test_auth_flow(email: str, password: str, status_code: int, ac: AsyncClient):
+    # /register
+    resp_register = await ac.post(
+        "/auth/register",
+        json={
+            "email": email,
+            "password": password,
+        },
+    )
+    assert resp_register.status_code == status_code
     if status_code != 200:
         return
 
-    await ac.post("/auth/login", json={"email": email, "password": password})
-    assert response.status_code == 200
+    # /login
+    resp_login = await ac.post(
+        "/auth/login",
+        json={
+            "email": email,
+            "password": password,
+        },
+    )
+    assert resp_login.status_code == 200
     assert ac.cookies["access_token"]
+    assert "access_token" in resp_login.json()
 
-    response = await ac.post("/auth/me")
-    assert response.status_code == 200
-    assert response.json()["email"] == email
-    assert "id" in response.json()
-    assert "password" not in response.json()
-    assert "hashed_password" not in response.json()
+    # /me
+    resp_me = await ac.get("/auth/me")
+    assert resp_me.status_code == 200
+    user = resp_me.json()
+    assert user["email"] == email
+    assert "id" in user
+    assert "password" not in user
+    assert "hashed_password" not in user
 
-    response = await ac.delete("/auth/logout")
-    assert response.status_code == 200
-    response = await ac.post("/auth/me")
-    assert response.status_code == 401
+    # /logout
+    resp_logout = await ac.post("/auth/logout")
+    assert resp_logout.status_code == 200
+    assert "access_token" not in ac.cookies

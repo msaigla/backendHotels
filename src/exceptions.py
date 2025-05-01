@@ -10,25 +10,45 @@ class BaseExc(Exception):
         super().__init__(self.detail, *args, **kwargs)
 
 
-class ObjectNotFoundException(BaseExc):
+class ObjectNotFoundException(BaseException):
     detail = "Объект не найден"
 
 
-class ObjectAlreadyExistsException(BaseExc):
+class RoomNotFoundException(BaseException):
+    detail = "Номер не найден"
+
+
+class HotelNotFoundException(BaseException):
+    detail = "Отель не найден"
+
+
+class ObjectAlreadyExistsException(BaseException):
     detail = "Похожий объект уже существует"
 
 
-class AllRoomsAreBookedException(BaseExc):
-    detail = "Не сталось свободных номеров"
+class AllRoomsAreBookedException(BaseException):
+    detail = "Не осталось свободных номеров"
 
 
-class IncorrectPassword(BaseExc):
-    detail = "Не корректный пароль"
+class IncorrectTokenException(BaseException):
+    detail = "Некорректный токен"
 
 
-def check_date_to_is_after_date_from(date_from: date, date_to: date) -> None:
-    if date_from >= date_to:
-        raise HTTPException(status_code=403, detail="Дата заезда позже или ровна дате выезда")
+class EmailNotRegisteredException(BaseException):
+    detail = "Пользователь с таким email не зарегистрирован"
+
+
+class IncorrectPasswordException(BaseException):
+    detail = "Пароль неверный"
+
+
+class UserAlreadyExistsException(BaseException):
+    detail = "Пользователь уже существует"
+
+
+def check_date_to_after_date_from(date_from: date, date_to: date) -> None:
+    if date_to <= date_from:
+        raise HTTPException(status_code=422, detail="Дата заезда не может быть позже даты выезда")
 
 
 class BaseHTTPException(HTTPException):
@@ -41,9 +61,39 @@ class BaseHTTPException(HTTPException):
 
 class HotelNotFoundHTTPException(BaseHTTPException):
     status_code = 404
-    detail = "Отеля не существует"
+    detail = "Отель не найден"
 
 
 class RoomNotFoundHTTPException(BaseHTTPException):
     status_code = 404
-    detail = "Номера не существует"
+    detail = "Номер не найден"
+
+
+class AllRoomsAreBookedHTTPException(BaseHTTPException):
+    status_code = 409
+    detail = "Не осталось свободных номеров"
+
+
+class IncorrectTokenHTTPException(BaseHTTPException):
+    detail = "Некорректный токен"
+
+
+class EmailNotRegisteredHTTPException(BaseHTTPException):
+    status_code = 401
+    detail = "Пользователь с таким email не зарегистрирован"
+
+
+class UserEmailAlreadyExistsHTTPException(BaseHTTPException):
+    status_code = 409
+    detail = "Пользователь с такой почтой уже существует"
+
+
+class IncorrectPasswordHTTPException(BaseHTTPException):
+    status_code = 401
+    detail = "Пароль неверный"
+
+
+class NoAccessTokenHTTPException(BaseHTTPException):
+    status_code = 401
+    detail = "Вы не предоставили токен доступа"
+

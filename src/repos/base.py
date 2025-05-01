@@ -1,3 +1,4 @@
+import logging
 from typing import Any
 
 from asyncpg import UniqueViolationError
@@ -24,7 +25,7 @@ class BaseRepository:
     async def get_all(self, *args, **kwargs):
         return await self.get_filtered()
 
-    async def get_one_or_none(self, **filter_by) -> BaseModel | None | Any:
+    async def get_one_or_none(self, **filter_by) -> BaseModel | None:
         query = select(self.model).filter_by(**filter_by)
         result = await self.session.execute(query)
         model = result.scalars().one_or_none()
@@ -46,12 +47,16 @@ class BaseRepository:
             query = insert(self.model).values(**data.model_dump()).returning(self.model)
             result = await self.session.execute(query)
             model = result.scalars().one()
+            return self.mapper.map_to_domain_entity(model)
         except IntegrityError as ex:
+            logging.exception(
+                f"Не удалось добавить данные в БД, дополнительные данные={data}"
+            )
             if isinstance(ex.orig.__cause__, UniqueViolationError):
                 raise ObjectAlreadyExistsException from ex
             else:
+                logging.exception(f"Не знакомая ошибка")
                 raise ex
-        return self.mapper.map_to_domain_entity(model)
 
     async def add_bulk(self, data: list[BaseModel]):
         query = (
@@ -60,7 +65,6 @@ class BaseRepository:
         await self.session.execute(query)
 
     async def edit(self, data: BaseModel, exclude_unset: bool = False, **filter_by) -> None:
-        await self.get_one(**filter_by)
         query = (
             update(self.model)
             .filter_by(**filter_by)
@@ -69,6 +73,5 @@ class BaseRepository:
         await self.session.execute(query)
 
     async def delete(self, **filter_by) -> None:
-        await self.get_one(**filter_by)
         query = delete(self.model).filter_by(**filter_by)
         await self.session.execute(query)
