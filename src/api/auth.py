@@ -1,9 +1,11 @@
-from fastapi import APIRouter, Response
+from fastapi import APIRouter, Response, Request
 
 from src.api.dependencies import UserIdDep, DBDep
 from src.exceptions import (IncorrectPasswordHTTPException, IncorrectPasswordException,
                             EmailNotRegisteredHTTPException, EmailNotRegisteredException,
-                            UserAlreadyExistsException, UserEmailAlreadyExistsHTTPException)
+                            UserAlreadyExistsException, UserEmailAlreadyExistsHTTPException,
+                            PasswordTooShortException, PasswordTooShortHTTPException, UserAuthHTTPException,
+                            UserNotAuthHTTPException)
 from src.schemas.users import UserRequestAdd
 from src.services.auth import AuthService
 
@@ -19,6 +21,8 @@ async def register_user(
         await AuthService(db).register_user(data)
     except UserAlreadyExistsException:
         raise UserEmailAlreadyExistsHTTPException
+    except PasswordTooShortException:
+        raise PasswordTooShortHTTPException
 
     return {"status": "OK"}
 
@@ -27,8 +31,11 @@ async def register_user(
 async def login_user(
         data: UserRequestAdd,
         response: Response,
+        request: Request,
         db: DBDep,
 ):
+    if request.cookies.get("access_token"):
+        raise UserAuthHTTPException
     try:
         access_token = await AuthService(db).login_user(data)
     except EmailNotRegisteredException:
@@ -49,6 +56,8 @@ async def get_me(
 
 
 @router.post("/logout")
-async def logout(response: Response):
+async def logout(response: Response, request: Request):
+    if not request.cookies.get("access_token"):
+        raise UserNotAuthHTTPException
     response.delete_cookie("access_token")
     return {"status": "OK"}

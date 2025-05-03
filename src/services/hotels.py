@@ -1,7 +1,8 @@
 from datetime import date
 
 from src.api.dependencies import PaginationDep
-from src.exceptions import ObjectNotFoundException, HotelNotFoundException, check_date_to_after_date_from
+from src.exceptions import ObjectNotFoundException, HotelNotFoundException, check_date_to_after_date_from, \
+    PatchNoFieldsException
 from src.schemas.hotels import HotelAdd, HotelPatch, Hotel
 from src.services.base import BaseService
 
@@ -30,6 +31,8 @@ class HotelService(BaseService):
         return await self.db.hotels.get_one(id=hotel_id)
 
     async def add_hotel(self, data: HotelAdd):
+        if data.title == "" or data.location == "":
+            raise ObjectNotFoundException
         data = await self.db.hotels.add(data)
         await self.db.commit()
         return data
@@ -39,6 +42,8 @@ class HotelService(BaseService):
         await self.db.commit()
 
     async def edit_hotel_partially(self, hotel_id: int, data: HotelPatch, exclude_unset: bool = False):
+        if not data.title and not data.location:
+            raise PatchNoFieldsException
         await self.db.hotels.edit(data, exclude_unset=exclude_unset, id=hotel_id)
         await self.db.commit()
 

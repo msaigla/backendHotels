@@ -42,8 +42,16 @@ class IncorrectPasswordException(BaseException):
     detail = "Пароль неверный"
 
 
+class PasswordTooShortException(BaseException):
+    detail = "Слишком короткий пароль"
+
+
 class UserAlreadyExistsException(BaseException):
     detail = "Пользователь уже существует"
+
+
+class PatchNoFieldsException(BaseException):
+    detail = "Добавьте хотя бы одно поле для изменения"
 
 
 def check_date_to_after_date_from(date_from: date, date_to: date) -> None:
@@ -96,4 +104,29 @@ class IncorrectPasswordHTTPException(BaseHTTPException):
 class NoAccessTokenHTTPException(BaseHTTPException):
     status_code = 401
     detail = "Вы не предоставили токен доступа"
+
+
+class PasswordTooShortHTTPException(BaseHTTPException):
+    status_code = 409
+    detail = "Пароль не может быть короче 4 символов"
+
+
+class UserAuthHTTPException(BaseHTTPException):
+    status_code = 409
+    detail = "Вы уже авторизированны"
+
+
+class UserNotAuthHTTPException(BaseHTTPException):
+    status_code = 409
+    detail = "Вы не авторизированны"
+
+
+class CreateHotelEmptyFieldsHTTPException(BaseHTTPException):
+    status_code = 409
+    detail = "Поля title и location не могут быть пустыми"
+
+
+class PatchNoFieldsHTTPException(BaseHTTPException):
+    status_code = 409
+    detail = "Добавьте хотя бы одно поле для изменения"
 

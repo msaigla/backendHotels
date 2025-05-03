@@ -4,7 +4,9 @@ from fastapi import APIRouter, Query, Body
 from fastapi_cache.decorator import cache
 
 from src.api.dependencies import PaginationDep, DBDep
-from src.exceptions import ObjectNotFoundException, HotelNotFoundHTTPException
+from src.exceptions import (ObjectNotFoundException, HotelNotFoundHTTPException,
+                            CreateHotelEmptyFieldsHTTPException,
+                            PatchNoFieldsException, PatchNoFieldsHTTPException)
 from src.schemas.hotels import HotelPatch, HotelAdd
 from src.services.hotels import HotelService
 
@@ -54,7 +56,10 @@ async def create_hotel(
             }
         ),
 ):
-    hotel = await HotelService(db).add_hotel(hotel_data)
+    try:
+        hotel = await HotelService(db).add_hotel(hotel_data)
+    except ObjectNotFoundException:
+        raise CreateHotelEmptyFieldsHTTPException
     return {"status": "OK", "data": hotel}
 
 
@@ -66,7 +71,10 @@ async def edit_hotel(db: DBDep, hotel_id: int, hotel_data: HotelAdd):
 
 @router.patch("/{hotel_id}")
 async def edit_hotel_patch(db: DBDep, hotel_id: int, hotel_data: HotelPatch):
-    await HotelService(db).edit_hotel_partially(hotel_id, hotel_data, exclude_unset=True)
+    try:
+        await HotelService(db).edit_hotel_partially(hotel_id, hotel_data, exclude_unset=True)
+    except PatchNoFieldsException:
+        raise PatchNoFieldsHTTPException
     return {"status": "OK"}
 
 
