@@ -51,7 +51,10 @@ async def login_user(
 async def get_me(
         user_id: UserIdDep,
         db: DBDep,
+        request: Request
 ):
+    if not request.cookies.get("access_token"):
+        raise UserNotAuthHTTPException
     return await AuthService(db).get_one_or_none_user(user_id)
 
 
