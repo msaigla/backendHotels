@@ -26,4 +26,4 @@ __pycache__
 
 .env
 celerybeat-schedule.db
-.env-test
+test.env

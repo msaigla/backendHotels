@@ -55,7 +55,7 @@ class RoomsRepository(BaseRepository):
         )
         result = await self.session.execute(query)
         try:
-            model = result.scalars_one()
+            model = result.scalar_one()
         except NoResultFound:
             raise RoomNotFoundException
         return RoomDataWithRelsMapper.map_to_domain_entity(model)

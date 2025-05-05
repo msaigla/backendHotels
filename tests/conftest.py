@@ -24,7 +24,6 @@ def check_test_mode():
 
 async def get_db_null_pool():
     async with DBManager(session_factory=async_session_maker_null_pool) as db:
-        print("I PEREZAPISON")
         yield db
 
 
